@@ -34,6 +34,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     """
     epilog = """\
 examples:
+  # First-time setup: authenticate and create session
+  python telegram_media_downloader.py --login
+
   # Download all media from a channel
   python telegram_media_downloader.py -c my_channel
 
@@ -61,9 +64,14 @@ examples:
     )
 
     parser.add_argument(
+        "--login",
+        action="store_true",
+        help="Authenticate with Telegram and save session, then exit",
+    )
+    parser.add_argument(
         "--channel", "-c",
-        required=True,
-        help="Channel name or numeric ID",
+        default=None,
+        help="Channel name or numeric ID (required unless --login is used)",
     )
     parser.add_argument(
         "--type", "-t",
@@ -122,7 +130,13 @@ examples:
         help="Path to .env file (default: .env)",
     )
 
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    # Validate: --channel is required unless --login is used
+    if not args.login and not args.channel:
+        parser.error("--channel/-c is required (unless using --login)")
+
+    return args
 
 
 async def resolve_channel(client, channel_identifier):
@@ -200,6 +214,17 @@ async def main(args) -> int:
         return 1
 
     try:
+        # --login mode: authenticate and exit
+        if args.login:
+            me = await client.get_me()
+            display_name = me.first_name or ""
+            if me.last_name:
+                display_name += f" {me.last_name}"
+            print(f"🔐 Logged in as: {display_name} (@{me.username or 'N/A'})")
+            print(f"📁 Session saved to: {config['session_name']}.session")
+            print("\nYou can now run downloads without re-authenticating.")
+            return 0
+
         # Resolve channel
         print(f"🔍 Resolving channel: {args.channel}")
         entity = await resolve_channel(client, args.channel)

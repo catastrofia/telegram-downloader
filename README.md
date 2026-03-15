@@ -13,6 +13,7 @@ Download media (videos, photos, audio, documents) from Telegram channels with fl
 - **Two-pass approach** — scan first, then download (no surprises)
 - **Resume support** — automatically skips already-downloaded files
 - **Dry-run mode** — preview what would be downloaded without writing files
+- **Login-only mode** — authenticate once, download later
 - **Secure credentials** — API keys stored in `.env`, never committed to git
 - **Fast downloads** — optional `cryptg` C-based crypto acceleration
 
@@ -29,8 +30,8 @@ Download media (videos, photos, audio, documents) from Telegram channels with fl
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/Telegram_downloader.git
-cd Telegram_downloader
+git clone https://github.com/catastrofia/telegram-downloader.git
+cd telegram-downloader
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -39,8 +40,8 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env and fill in your API_ID and API_HASH
 
-# 4. First run — authenticates with Telegram (one-time phone/code prompt)
-python telegram_media_downloader.py -c my_channel --dry-run
+# 4. Authenticate with Telegram (one-time phone/code prompt)
+python telegram_media_downloader.py --login
 ```
 
 Your `.env` file should look like:
@@ -55,6 +56,16 @@ DOWNLOAD_DIR=downloads
 ---
 
 ## 📖 Usage
+
+### First-Time Setup
+
+Authenticate with Telegram and save your session. You only need to do this once:
+
+```bash
+python telegram_media_downloader.py --login
+```
+
+This will prompt for your phone number and a verification code, then save the session locally. All subsequent commands will use the saved session without re-authenticating.
 
 ### Basic Usage
 
@@ -142,7 +153,8 @@ Use these IDs with: python telegram_media_downloader.py --channel <ID>
 
 | Option | Short | Default | Description |
 |---|---|---|---|
-| `--channel` | `-c` | *(required)* | Channel name or numeric ID |
+| `--login` | | `false` | Authenticate with Telegram and save session, then exit |
+| `--channel` | `-c` | *(required)** | Channel name or numeric ID |
 | `--type` | `-t` | `all` | Media types to download: `video`, `photo`, `audio`, `document`, `all` |
 | `--output` | `-o` | `downloads` | Download directory (overrides `.env` `DOWNLOAD_DIR`) |
 | `--naming` | `-n` | `sequential` | Naming strategy: `original`, `sequential`, `custom` |
@@ -153,6 +165,8 @@ Use these IDs with: python telegram_media_downloader.py --channel <ID>
 | `--dry-run` | | `false` | Scan only — list files without downloading |
 | `--yes` | `-y` | `false` | Skip download confirmation prompt |
 | `--env` | | `.env` | Path to `.env` configuration file |
+
+*\* `--channel` is required for all commands except `--login`.*
 
 ---
 
@@ -210,11 +224,18 @@ If not installed, you'll see a warning with install instructions. The downloader
 | `API_ID must be a numeric integer` | Ensure `API_ID` in `.env` is a number, not a string (no quotes needed) |
 | `Could not find channel` | Verify the channel name/ID. Use `python channel_id_finder.py` to list available channels |
 | `Failed to connect to Telegram` | Check your internet connection and verify `API_ID`/`API_HASH` are correct |
-| Phone number / code prompt on every run | This is normal on first run. The session is saved to a `.session` file for future use |
+| Phone number rejected | Enter your phone number with the international country code (e.g. `+491234567890` for Germany) |
+| Phone number / code prompt on every run | Run `python telegram_media_downloader.py --login` once to save your session |
 | `cryptg NOT found` warning | Optional — run `pip install cryptg` for faster downloads |
 | Downloads are slow | Install `cryptg` (see Speed Optimization above) |
 | Files already exist / skipped | Resume support — already-downloaded files are skipped automatically. Delete them to re-download |
 | Permission denied on download directory | Ensure you have write access to the output directory, or use `--output` to specify a different one |
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is intended for personal use only. Respect copyright laws and Telegram's [Terms of Service](https://telegram.org/tos). Only download media from channels you are a member of and that you have the right to access. The authors are not responsible for any misuse of this software.
 
 ---
 

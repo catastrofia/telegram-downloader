@@ -10,6 +10,9 @@ downloaded_videos/
 downloaded_media/
 downloads/
 
+# Testing
+.pytest_cache/
+
 # Python
 __pycache__/
 *.py[cod]
