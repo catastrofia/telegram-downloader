@@ -1,46 +1,98 @@
+#!/usr/bin/env python3
+"""
+Channel ID Finder — List all Telegram channels and groups with their IDs.
+
+Usage:
+    python channel_id_finder.py [--env .env]
+
+Useful for finding the numeric channel ID to pass to the main downloader.
+"""
+import argparse
 import asyncio
+import sys
+
 from telethon import TelegramClient
+from src.config import load_env_config
 
-# --- Configuration (Use the same values as your main script) ---
-API_ID = 30749554       # ⚠️ REPLACE with your actual API ID
-API_HASH = 'a770edd23c151f3b7039ca636f02258d' # ⚠️ REPLACE with your actual API Hash
-SESSION_NAME = 'id_finder_session'
 
-async def find_channel_id():
-    # 1. Start the client and authenticate (if needed)
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
-    await client.start()
+def parse_args(argv=None) -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        prog="channel_id_finder",
+        description="List all Telegram channels and groups with their IDs.",
+    )
+    parser.add_argument(
+        "--env",
+        default=".env",
+        help="Path to .env file (default: .env).",
+    )
+    return parser.parse_args(argv)
 
-    print("--- Authenticated successfully. ---")
-    print("Fetching dialogs (chats, channels, groups)...")
-    
-    # 2. Get all dialogs (chats)
+
+async def find_channels(config: dict) -> None:
+    """Connect to Telegram and list all channels/groups.
+
+    Args:
+        config: Configuration dict from load_env_config().
+    """
+    client = TelegramClient(
+        config["session_name"],
+        config["api_id"],
+        config["api_hash"],
+    )
+
+    try:
+        await client.start()
+    except Exception as e:
+        print(f"❌ FATAL ERROR during client start: {e}")
+        print("Please verify your API_ID and API_HASH in your .env file.")
+        return
+
+    print("--- ✅ Authenticated successfully ---")
+    print("Fetching dialogs (chats, channels, groups)...\n")
+
     dialogs = await client.get_dialogs()
 
-    print("\n--- Channels and Groups Found ---")
-    print("{:<50} {:<20}".format("Chat Name", "Channel ID"))
-    print("-" * 70)
-    
-    # 3. Iterate and print the name and ID
+    print(f"{'Chat Name':<55} {'Channel ID':<20}")
+    print("-" * 75)
+
     for dialog in dialogs:
         entity = dialog.entity
-        # We are only interested in channels and groups (chats that are not users)
-        if hasattr(entity, 'megagroup') or hasattr(entity, 'channel'):
-            chat_id = entity.id
-            
-            # Channel/Supergroup IDs must be prefixed with -100 to work in the main script
-            # Telethon/Telegram API exposes the bare ID, so we add the prefix here for clarity
-            if hasattr(entity, 'channel') and entity.channel:
-                full_id = f"-100{chat_id}"
-            else:
-                full_id = f"-{chat_id}" # For basic groups
-                
-            print("{:<50} {:<20}".format(entity.title, full_id))
-            
-    print("-" * 70)
-    
+
+        # Only show channels and groups
+        if not (hasattr(entity, "megagroup") or hasattr(entity, "broadcast")):
+            continue
+
+        chat_id = entity.id
+
+        # Channel/Supergroup IDs need -100 prefix for Telethon
+        if hasattr(entity, "broadcast") and entity.broadcast:
+            full_id = f"-100{chat_id}"
+        elif hasattr(entity, "megagroup") and entity.megagroup:
+            full_id = f"-100{chat_id}"
+        else:
+            full_id = f"-{chat_id}"
+
+        print(f"{entity.title:<55} {full_id:<20}")
+
+    print("-" * 75)
+    print("\nUse these IDs with: python telegram_media_downloader.py --channel <ID>")
+
     await client.disconnect()
 
-if __name__ == '__main__':
-    print("Please enter your phone number when prompted for login.")
-    asyncio.run(find_channel_id())
+
+def main():
+    """CLI entry point."""
+    args = parse_args()
+
+    try:
+        config = load_env_config(args.env)
+    except ValueError as e:
+        print(f"❌ Configuration error: {e}")
+        sys.exit(1)
+
+    asyncio.run(find_channels(config))
+
+
+if __name__ == "__main__":
+    main()
