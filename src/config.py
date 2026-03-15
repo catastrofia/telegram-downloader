@@ -30,10 +30,10 @@ def load_env_config(env_path: str = ".env") -> dict:
         )
     try:
         api_id = int(api_id_raw)
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"API_ID must be a numeric integer, got: '{api_id_raw}'"
-        )
+        ) from exc
 
     api_hash = os.environ.get("API_HASH")
     if not api_hash:
