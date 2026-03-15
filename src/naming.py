@@ -3,11 +3,11 @@
 Provides flexible naming: original filenames, sequential numbering,
 or custom patterns with index placeholders.
 """
-import enum
+from enum import Enum
 import re
 
 
-class NamingStrategy(enum.Enum):
+class NamingStrategy(Enum):
     """Available file naming strategies."""
 
     ORIGINAL = "original"
@@ -97,7 +97,7 @@ def get_original_filename(message) -> str | None:
         if message.media.document is None:
             return None
         for attr in message.media.document.attributes:
-            if hasattr(attr, "file_name"):
+            if hasattr(attr, "file_name") and attr.file_name:
                 return attr.file_name
     except (AttributeError, TypeError):
         return None

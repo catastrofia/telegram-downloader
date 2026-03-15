@@ -141,3 +141,11 @@ class TestGetOriginalFilename:
         msg = MagicMock()
         msg.media = None
         assert get_original_filename(msg) is None
+
+    def test_returns_none_when_file_name_is_empty_string(self):
+        """Returns None when file_name attribute is empty string."""
+        attr = MagicMock()
+        attr.file_name = ""
+        msg = MagicMock()
+        msg.media.document.attributes = [attr]
+        assert get_original_filename(msg) is None
