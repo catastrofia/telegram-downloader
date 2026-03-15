@@ -15,6 +15,7 @@ Download media (videos, photos, audio, documents) from Telegram channels with fl
 - **Dry-run mode** — preview what would be downloaded without writing files
 - **Login-only mode** — authenticate once, download later
 - **Secure credentials** — API keys stored in `.env`, never committed to git
+- **Interactive setup** — guided `--setup` wizard creates your `.env` file
 - **Fast downloads** — optional `cryptg` C-based crypto acceleration
 
 ---
@@ -36,15 +37,29 @@ cd telegram-downloader
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configure credentials
-cp .env.example .env
-# Edit .env and fill in your API_ID and API_HASH
+# 3. Configure credentials (interactive wizard)
+python telegram_media_downloader.py --setup
 
 # 4. Authenticate with Telegram (one-time phone/code prompt)
 python telegram_media_downloader.py --login
 ```
 
-Your `.env` file should look like:
+The `--setup` wizard will prompt you for each value and write a `.env` file:
+
+```
+🔧 Telegram Media Downloader — Setup
+==========================================
+Get your API credentials at: https://my.telegram.org/apps
+
+API_ID (numeric, from https://my.telegram.org/apps): 12345678
+API_HASH (from https://my.telegram.org/apps): abcdef1234567890abcdef1234567890
+SESSION_NAME [telegram_media_session]:
+DOWNLOAD_DIR [downloads]:
+
+✅ .env file written to: .env
+```
+
+The resulting `.env` file looks like:
 
 ```ini
 API_ID=12345678
@@ -53,13 +68,21 @@ SESSION_NAME=telegram_media_session
 DOWNLOAD_DIR=downloads
 ```
 
+> **Tip:** You can also create `.env` manually by copying `.env.example` and editing it.
+
 ---
 
 ## 📖 Usage
 
 ### First-Time Setup
 
-Authenticate with Telegram and save your session. You only need to do this once:
+1. **Create your `.env` file** with the interactive wizard (only needed once):
+
+```bash
+python telegram_media_downloader.py --setup
+```
+
+2. **Authenticate with Telegram** and save your session (only needed once):
 
 ```bash
 python telegram_media_downloader.py --login
@@ -153,6 +176,7 @@ Use these IDs with: python telegram_media_downloader.py --channel <ID>
 
 | Option | Short | Default | Description |
 |---|---|---|---|
+| `--setup` | | `false` | Interactively create a `.env` configuration file, then exit |
 | `--login` | | `false` | Authenticate with Telegram and save session, then exit |
 | `--channel` | `-c` | *(required)** | Channel name or numeric ID |
 | `--type` | `-t` | `all` | Media types to download: `video`, `photo`, `audio`, `document`, `all` |
@@ -166,7 +190,7 @@ Use these IDs with: python telegram_media_downloader.py --channel <ID>
 | `--yes` | `-y` | `false` | Skip download confirmation prompt |
 | `--env` | | `.env` | Path to `.env` configuration file |
 
-*\* `--channel` is required for all commands except `--login`.*
+*\* `--channel` is required for all commands except `--login` and `--setup`.*
 
 ---
 
@@ -185,15 +209,15 @@ Telegram_downloader/
 │   ├── config.py                 # .env loading and validation
 │   ├── media.py                  # Media type detection and filtering
 │   ├── naming.py                 # File naming strategies
-│   └── downloader.py             # Download engine with progress bars
-├── tests/                        # Unit tests
-│   ├── __init__.py
-│   ├── test_config.py            # Tests for config loading
-│   ├── test_media.py             # Tests for media classification
-│   ├── test_naming.py            # Tests for naming strategies
-│   └── test_downloader.py        # Tests for download engine
-└── docs/
-    └── plans/                    # Development planning documents
+│   ├── downloader.py             # Download engine with progress bars
+│   └── setup.py                  # Interactive .env setup wizard
+└── tests/                        # Unit tests
+    ├── __init__.py
+    ├── test_config.py            # Tests for config loading
+    ├── test_media.py             # Tests for media classification
+    ├── test_naming.py            # Tests for naming strategies
+    ├── test_downloader.py        # Tests for download engine
+    └── test_setup.py             # Tests for setup wizard
 ```
 
 ---
