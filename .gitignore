@@ -1,6 +1,9 @@
 # Environment & secrets
 .env
 
+# Development plans (internal only)
+docs/plans/
+
 # Telethon session files
 *.session
 *.session-journal
