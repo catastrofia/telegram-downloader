@@ -14,6 +14,7 @@ from telethon import TelegramClient
 from src.config import load_env_config
 from src.media import MediaType
 from src.naming import NamingStrategy
+from src.setup import run_setup
 from src.downloader import (
     check_cryptg,
     build_media_list,
@@ -34,6 +35,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     """
     epilog = """\
 examples:
+  # Interactive .env setup
+  python telegram_media_downloader.py --setup
+
   # First-time setup: authenticate and create session
   python telegram_media_downloader.py --login
 
@@ -64,6 +68,11 @@ examples:
     )
 
     parser.add_argument(
+        "--setup",
+        action="store_true",
+        help="Interactively create a .env configuration file, then exit",
+    )
+    parser.add_argument(
         "--login",
         action="store_true",
         help="Authenticate with Telegram and save session, then exit",
@@ -71,7 +80,7 @@ examples:
     parser.add_argument(
         "--channel", "-c",
         default=None,
-        help="Channel name or numeric ID (required unless --login is used)",
+        help="Channel name or numeric ID (required unless --login or --setup is used)",
     )
     parser.add_argument(
         "--type", "-t",
@@ -132,9 +141,9 @@ examples:
 
     args = parser.parse_args(argv)
 
-    # Validate: --channel is required unless --login is used
-    if not args.login and not args.channel:
-        parser.error("--channel/-c is required (unless using --login)")
+    # Validate: --channel is required unless --login or --setup is used
+    if not args.login and not args.setup and not args.channel:
+        parser.error("--channel/-c is required (unless using --login or --setup)")
 
     return args
 
@@ -303,6 +312,12 @@ async def main(args) -> int:
 def cli():
     """Entry point: parse arguments, run main, and exit."""
     args = parse_args()
+
+    # --setup mode: interactive .env creation, no Telegram connection needed
+    if args.setup:
+        success = run_setup(args.env)
+        sys.exit(0 if success else 1)
+
     exit_code = asyncio.run(main(args))
     sys.exit(exit_code)
 
